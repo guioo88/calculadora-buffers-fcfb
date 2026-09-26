@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Tampones Químicos y Bioquímicos</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --accent: #f0f9ff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    aside {
+      width: 320px;
+      background: var(--card-bg);
+      border-right: 1px solid var(--border);
+      padding: 28px 18px;
+      flex-shrink: 0;
+    }
+    aside h2 {
+      font-size: 1.15rem;
+      margin-bottom: 20px;
+      color: var(--primary-dark);
+      letter-spacing: -0.3px;
+    }
+
+    .buffer-btn {
+      width: 100%;
+      text-align: left;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: none;
+      font-size: 14px;
+      line-height: 1.4;
+      cursor: pointer;
+      color: var(--text);
+      transition: all 0.2s ease;
+    }
+    .buffer-btn:hover {
+      background: var(--bg);
+      border-color: var(--border);
+    }
+    .buffer-btn.active {
+      background: var(--accent);
+      color: var(--primary-dark);
+      font-weight: 600;
+      border-color: #bae6fd;
+    }
+
+    main {
+      flex: 1;
+      padding: 36px 48px;
+      max-width: 950px;
+    }
+    h1 {
+      font-size: 1.7rem;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .header-desc {
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .card h3 {
+      margin-bottom: 18px;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      background: #ffffff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus {
+      border-color: var(--primary);
+    }
+
+    .btn-calc {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 11px 24px;
+      border-radius: 7px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-calc:hover {
+      background: var(--primary-dark);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    th {
+      background: #f8fafc;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    ol {
+      margin-left: 20px;
+      margin-top: 12px;
+      font-size: 14.5px;
+      line-height: 1.7;
+      color: #334155;
+    }
+    ol li { margin-bottom: 8px; }
+
+    #outputSection { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Barra lateral -->
+  <aside>
+    <h2>Tampones Especializados</h2>
+    <div id="bufferNav"></div>
+  </aside>
+
+  <!-- Panel principal -->
+  <main>
+    <h1 id="bufferTitle">Cargando...</h1>
+    <p class="header-desc" id="bufferDesc"></p>
+
+    <!-- Parámetros -->
+    <div class="card">
+      <h3>Parámetros de Preparación</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Volumen final (L):</label>
+          <input type="number" id="volumeInput" value="1" min="0.01" step="any">
+        </div>
+        <div class="form-group" id="concGroup">
+          <label id="concLabel">Concentración total (M):</label>
+          <input type="number" id="concInput" value="0.1" min="0.001" step="any">
+        </div>
+        <div class="form-group">
+          <label>pH deseado:</label>
+          <select id="phSelect"></select>
+        </div>
+      </div>
+      <button class="btn-calc" onclick="generarFormula()">Calcular Fórmula</button>
+    </div>
+
+    <!-- Resultados -->
+    <div id="outputSection">
+      <div class="card">
+        <h3>Componentes Requeridos</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Reactivo</th>
+              <th>Fórmula / Masa Molar</th>
+              <th>Cantidad requerida</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Protocolo de Preparación</h3>
+        <ol id="protocolSteps"></ol>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Base de datos de los 4 tampones con coeficientes empíricos y estequiométricos de referencia (Gomori / CRC)
+    const bufferDB = {
+      "acetato": {
+        name: "Ácido acético - Acetato de sodio",
+        desc: "Rango amortiguador: pH 3.6 a 5.6 (pKa ≈ 4.76 a 25°C). Ideal para precipitaciones ácidas, cinética enzimática y biología molecular.",
+        hasConc: true,
+        defaultConc: 0.1,
+        // Porcentaje molar de Acetato de Sodio (base conjugada) vs Ácido Acético según pH
+        phTable: [
+          { ph: 2.6, fracBase: 0.075 },
+          { ph: 3.8, fracBase: 0.120 },
+          { ph: 4.0, fracBase: 0.180 },
+          { ph: 4.2, fracBase: 0.265 },
+          { ph: 4.4, fracBase: 0.370 },
+          { ph: 4.6, fracBase: 0.488 },
+          { ph: 4.8, fracBase: 0.600 },
+          { ph: 5.0, fracBase: 0.700 },
+          { ph: 5.2, fracBase: 0.790 },
+          { ph: 5.4, fracBase: 0.860 },
+          { ph: 5.6, fracBase: 0.910 }
+        ],
+        calculate: function(vol, conc, phItem) {
+          const molesTotales = conc * vol;
+          const molesAcetato = molesTotales * phItem.fracBase;
+          const molesAcido = molesTotales * (1 - phItem.fracBase);
+
+          // Acetato de sodio trihidratado: CH3COONa · 3H2O (136.08 g/mol)
+          const gAcetato = molesAcetato * 136.08;
+
+          // Ácido acético glacial: 100% puro, densidad ~1.049 g/mL, MW: 60.05 g/mol (~17.4 M)
+          const mlAcido = (molesAcido / 17.4) * 1000;
+
+          return [
+            { comp: "Acetato de sodio trihidratado", spec: "CH3COONa · 3H2O (MW: 136.08 g/mol)", qty: `${gAcetato.toFixed(3)} g` },
+            { comp: "Ácido acético glacial", spec: "CH3COOH 100% (d = 1.049 g/mL)", qty: `${mlAcido.toFixed(2)} mL` }
+          ];
+        }
+      },
+      "borato": {
+        name: "Ácido bórico - Borato ",
+        desc: "Rango amortiguador: pH 7.4 a 9.2. Ampliamente empleado en electroforesis capilar y geles de poliacrilamida.",
+        hasConc: true,
+        defaultConc: 0.1,
+        // Fracción molar de Bórax (Na2B4O7 · 10H2O) relativo a Ácido Bórico (H3BO3)
+        phTable: [
+          { ph: 7.4, fracBorax: 0.05 },
+          { ph: 7.6, fracBorax: 0.08 },
+          { ph: 7.8, fracBorax: 0.12 },
+          { ph: 8.0, fracBorax: 0.17 },
+          { ph: 8.2, fracBorax: 0.24 },
+          { ph: 8.4, fracBorax: 0.32 },
+          { ph: 8.6, fracBorax: 0.43 },
+          { ph: 8.8, fracBorax: 0.54 },
+          { ph: 9.0, fracBorax: 0.68 },
+          { ph: 9.2, fracBorax: 0.80 }
+        ],
+        calculate: function(vol, conc, phItem) {
+          const molesBoroTotal = conc * vol;
+          // Un mol de Bórax aporta 4 átomos de boro; calculamos las masas directamente para el volumen total
+          const molesBorax = (molesBoroTotal * phItem.fracBorax) / 4;
+          const molesBórico = molesBoroTotal * (1 - phItem.fracBorax);
+
+          // Ácido Bórico: H3BO3 (61.83 g/mol)
+          const gBorico = molesBórico * 61.83;
+          // Tetraborato de sodio decahidratado (Bórax): Na2B4O7 · 10H2O (381.37 g/mol)
+          const gBorax = molesBorax * 381.37;
+
+          return [
+            { comp: "Ácido Bórico", spec: "H3BO3 (MW: 61.83 g/mol)", qty: `${gBorico.toFixed(3)} g` },
+            { comp: "Bórax (Tetraborato de sodio)", spec: "Na2B4O7 · 10H2O (MW: 381.37 g/mol)", qty: `${gBorax.toFixed(3)} g` }
+          ];
+        }
+      },
+      "carbonato": {
+        name: "Carbonato - Bicarbonato (Na₂CO₃ - NaHCO₃)",
+        desc: "Rango amortiguador: pH 9.2 a 10.8 (pKa ≈ 10.33 a 25°C). Usado rutinariamente como buffer de tapizado (coating) en ensayos ELISA.",
+        hasConc: true,
+        defaultConc: 0.05,
+        // Fracción molar de Na2CO3 frente a NaHCO3
+        phTable: [
+          { ph: 9.2, fracCarb: 0.10 },
+          { ph: 9.4, fracCarb: 0.15 },
+          { ph: 9.6, fracCarb: 0.24 },
+          { ph: 9.8, fracCarb: 0.35 },
+          { ph: 10.0, fracCarb: 0.48 },
+          { ph: 10.2, fracCarb: 0.60 },
+          { ph: 10.4, fracCarb: 0.72 },
+          { ph: 10.6, fracCarb: 0.81 },
+          { ph: 10.8, fracCarb: 0.89 }
+        ],
+        calculate: function(vol, conc, phItem) {
+          const molesTotales = conc * vol;
+          const molesNa2CO3 = molesTotales * phItem.fracCarb;
+          const molesNaHCO3 = molesTotales * (1 - phItem.fracCarb);
+
+          // Carbonato de sodio anhidro: Na2CO3 (105.99 g/mol)
+          const gNa2CO3 = molesNa2CO3 * 105.99;
+          // Bicarbonato de sodio: NaHCO3 (84.01 g/mol)
+          const gNaHCO3 = molesNaHCO3 * 84.01;
+
+          return [
+            { comp: "Carbonato de sodio anhidro", spec: "Na2CO3 (MW: 105.99 g/mol)", qty: `${gNa2CO3.toFixed(3)} g` },
+            { comp: "Bicarbonato de sodio", spec: "NaHCO3 (MW: 84.01 g/mol)", qty: `${gNaHCO3.toFixed(3)} g` }
+          ];
+        }
+      },
+      "fosfato-citrato": {
+        name: "Fosfato - Citrato",
+        desc: "Rango amortiguador amplio: pH 2.6 a 7.6. Excelente para sustratos cromogénicos como OPD y TMB en ensayos inmunoquímicos.",
+        hasConc: false,
+        // ml de solución 0.2 M Na2HPO4 y 0.1 M Ácido Cítrico para 100 mL de buffer final (Tabla estándar de McIlvaine)
+        phTable: [
+          { ph: 2.6, mlPhos: 10.9, mlCitr: 89.1 },
+          { ph: 3.0, mlPhos: 20.5, mlCitr: 79.5 },
+          { ph: 3.6, mlPhos: 32.2, mlCitr: 67.8 },
+          { ph: 4.0, mlPhos: 38.5, mlCitr: 61.5 },
+          { ph: 4.6, mlPhos: 46.7, mlCitr: 53.3 },
+          { ph: 5.0, mlPhos: 51.5, mlCitr: 48.5 },
+          { ph: 5.6, mlPhos: 58.0, mlCitr: 42.0 },
+          { ph: 6.0, mlPhos: 63.1, mlCitr: 36.9 },
+          { ph: 6.6, mlPhos: 72.7, mlCitr: 27.3 },
+          { ph: 7.0, mlPhos: 82.35, mlCitr: 17.65 },
+          { ph: 7.6, mlPhos: 93.65, mlCitr: 6.35 }
+        ],
+        calculate: function(vol, conc, phItem) {
+          // El buffer estándar de McIlvaine se prepara combinando stocks de Na2HPO4 (0.2 M) y Ácido cítrico (0.1 M)
+          // Proporción por cada Litro:
+          const factorL = vol * 10; // (ml / 100 ml) * 10 = ml/L
+          const volStockPhos = phItem.mlPhos * factorL;
+          const volStockCitr = phItem.mlCitr * factorL;
+
+          // Masa si se prepara directamente con sales puras:
+          // Na2HPO4 anhidro (MW: 141.96 g/mol) en la solución 0.2 M -> moles = 0.2 * (volStockPhos / 1000)
+          const gNa2HPO4 = (0.2 * (volStockPhos / 1000)) * 141.96;
+          // Ácido Cítrico monohidratado (C6H8O7 · H2O, MW: 210.14 g/mol) en la solución 0.1 M
+          const gCitrico = (0.1 * (volStockCitr / 1000)) * 210.14;
+
+          return [
+            { comp: "Fosfato disódico anhidro", spec: "Na2HPO4 (MW: 141.96 g/mol)", qty: `${gNa2HPO4.toFixed(3)} g` },
+            { comp: "Ácido Cítrico monohidratado", spec: "C6H8O7 · H2O (MW: 210.14 g/mol)", qty: `${gCitrico.toFixed(3)} g` }
+          ];
+        }
+      }
+    };
+
+    let activeKey = "acetato";
+
+    function initNav() {
+      const navContainer = document.getElementById("bufferNav");
+      navContainer.innerHTML = "";
+      Object.keys(bufferDB).forEach(key => {
+        const btn = document.createElement("button");
+        btn.className = `buffer-btn ${key === activeKey ? 'active' : ''}`;
+        btn.textContent = bufferDB[key].name;
+        btn.onclick = () => selectBuffer(key);
+        navContainer.appendChild(btn);
+      });
+      loadBufferData();
+    }
+
+    function selectBuffer(key) {
+      activeKey = key;
+      initNav();
+      document.getElementById("outputSection").style.display = "none";
+    }
+
+    function loadBufferData() {
+      const buf = bufferDB[activeKey];
+      document.getElementById("bufferTitle").textContent = buf.name;
+      document.getElementById("bufferDesc").textContent = buf.desc;
+
+      const concGroup = document.getElementById("concGroup");
+      if (buf.hasConc) {
+        concGroup.style.display = "block";
+        document.getElementById("concInput").value = buf.defaultConc;
+      } else {
+        concGroup.style.display = "none";
+      }
+
+      const phSelect = document.getElementById("phSelect");
+      phSelect.innerHTML = "";
+      buf.phTable.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.ph;
+        option.textContent = item.ph.toFixed(1);
+        phSelect.appendChild(option);
+      });
+    }
+
+    function generarFormula() {
+      const buf = bufferDB[activeKey];
+      const vol = parseFloat(document.getElementById("volumeInput").value);
+      const conc = parseFloat(document.getElementById("concInput").value) || 0;
+      const selectedPh = parseFloat(document.getElementById("phSelect").value);
+
+      if (isNaN(vol) || vol <= 0) {
+        alert("Introduce un volumen válido mayor a 0.");
+        return;
+      }
+      if (buf.hasConc && (isNaN(conc) || conc <= 0)) {
+        alert("Introduce una concentración válida.");
+        return;
+      }
+
+      const phItem = buf.phTable.find(item => item.ph === selectedPh);
+      const components = buf.calculate(vol, conc, phItem);
+
+      // Renderizar tabla
+      const tbody = document.getElementById("tableBody");
+      tbody.innerHTML = "";
+      components.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${item.comp}</strong></td>
+          <td>${item.spec}</td>
+          <td><span style="color: var(--primary-dark); font-weight: 600;">${item.qty}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Generar protocolo secuencial
+      const volInicial = (vol * 0.8 * 1000).toFixed(0);
+      const steps = [
+        `Medir aproximadamente ${volInicial} mL de agua desionizada (calidad Milli-Q o destilada) en un recipiente adecuado provisto de agitación magnética.`,
+        ...components.map(item => `Añadir y disolver completamente <strong>${item.qty}</strong> de ${item.comp}.`),
+        `Calibrar el potenciómetro / pH-metro con estándares certificados y medir el pH de la solución a temperatura ambiente (~20-25°C).`,
+        `Si es necesario, realizar un ajuste fino al pH ${selectedPh.toFixed(1)} utilizando alícuotas diluidas de HCl o NaOH.`,
+        `Transferir cuantitativamente a un matraz aforado y completar con agua desionizada hasta el volumen final exacto de ${vol} L.`
+      ];
+
+      const stepsList = document.getElementById("protocolSteps");
+      stepsList.innerHTML = "";
+      steps.forEach(step => {
+        const li = document.createElement("li");
+        li.innerHTML = step;
+        stepsList.appendChild(li);
+      });
+
+      document.getElementById("outputSection").style.display = "block";
+    }
+
+    // Inicializar al cargar
+    initNav();
+  </script>
+</body>
+</html>
